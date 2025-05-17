@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Mentale du Système Climatique</title>
+    <style>
+        html, body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #mindmap-viewport {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            cursor: grab;
+        }
+        
+        #mindmap-viewport.dragging {
+            cursor: grabbing;
+        }
+        
+        #mindmap-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
+        }
+        
+        .node {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            overflow: hidden;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .node-content {
+            padding: 10px;
+            max-width: 100%;
+            max-height: 100%;
+            overflow: auto;
+            font-size: 14px;
+        }
+        
+        .main-node {
+            width: 180px;
+            height: 180px;
+            background-color: #2563eb;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 20;
+        }
+        
+        .level-1 {
+            width: 160px;
+            height: 160px;
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            transform: scale(0);
+        }
+        
+        .level-2 {
+            width: 140px;
+            height: 140px;
+            background-color: #60a5fa;
+            color: #121212;
+            opacity: 0;
+            transform: scale(0);
+        }
+        
+        .level-3 {
+            width: 120px;
+            height: 120px;
+            background-color: #93c5fd;
+            color: #121212;
+            opacity: 0;
+            transform: scale(0);
+        }
+        
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 30;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+        
+        .connection {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.3);
+            z-index: 5;
+            transform-origin: 0 50%;
+        }
+        
+        .visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #e0e0e0;
+        }
+        
+        ul {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+        
+        h3 {
+            margin: 10px 0 5px 0;
+            color: #60a5fa;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background-color: #1d4ed8;
+            transform: scale(1.1);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        body.dragging,
+        body.dragging * {
+            user-select: none !important;
+            cursor: grabbing !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="mindmap-viewport">
+        <div id="mindmap-container">
+            <div class="node main-node" id="main-node" onclick="toggleChildren(this.id, 'level-1')">
+                <div class="node-content">Système Climatique</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="info-panel" id="info-panel">
+        <button class="close-btn" onclick="closeInfoPanel()">×</button>
+        <div id="info-content"></div>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" onclick="zoomIn()">+</button>
+        <button class="control-btn" onclick="zoomOut()">−</button>
+        <button class="control-btn" onclick="resetZoom()">⟲</button>
+    </div>
+
+    <script>
+        let currentZoom = 1;
+        const zoomStep = 0.1;
+        const minZoom = 0.3;
+        const maxZoom = 2;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let containerOffsetX = 0;
+        let containerOffsetY = 0;
+        let startOffsetX = 0;
+        let startOffsetY = 0;
+        
+        // Données structurées de la carte mentale avec des angles ajustés pour éviter les superpositions
+        const mindmapData = {
+            "main-node": {
+                title: "Système Climatique",
+                children: [
+                    {
+                        id: "bases-climatologie",
+                        title: "I. Les bases de la climatologie",
+                        level: "level-1",
+                        angle: 270, // Haut
+                        children: [
+                            {
+                                id: "climat-terre",
+                                title: "1. Le climat de la Terre",
+                                level: "level-2",
+                                angle: 240, // Haut-gauche
+                                content: `
+                                    <h3>Définitions</h3>
+                                    <p><strong>Météorologie :</strong> Étude des phénomènes atmosphériques à court terme (quelques jours)</p>
+                                    <p><strong>Climat :</strong> Moyennes des grandeurs atmosphériques sur 30 ans dans une région donnée</p>
+                                    <p><strong>Climatologie :</strong> Étude des variations du climat sur de longues périodes (décennies, siècles)</p>
+                                `
+                            },
+                            {
+                                id: "variabilite-climat",
+                                title: "2. Variabilité naturelle du climat",
+                                level: "level-2",
+                                angle: 300, // Haut-droite
+                                content: `
+                                    <h3>Indicateurs principaux :</h3>
+                                    <ul>
+                                        <li>Température moyenne de surface</li>
+                                        <li>Volume des océans (niveau marin)</li>
+                                        <li>Étendue des glaces et glaciers</li>
+                                    </ul>
+                                    <h3>Archives climatiques :</h3>
+                                    <ul>
+                                        <li>Carottes de glace (jusqu'à 800 000 ans)</li>
+                                        <li>Palynologie (analyse des pollens)</li>
+                                    </ul>
+                                `
+                            }
+                        ]
+                    },
+                    {
+                        id: "mecanismes-rechauffement",
+                        title: "II. Les mécanismes du réchauffement climatique",
+                        level: "level-1",
+                        angle: 30, // Droite
+                        children: [
+                            {
+                                id: "forcage-radiatif",
+                                title: "1. Forçage radiatif",
+                                level: "level-2",
+                                angle: 0, // Droite
+                                content: `
+                                    <h3>Définition et causes</h3>
+                                    <p><strong>Définition :</strong> Différence entre l'énergie radiative reçue et émise</p>
+                                    <p><strong>Cause :</strong> Émission de gaz à effet de serre par activités humaines</p>
+                                    <p><strong>Conséquence :</strong> Augmentation de l'absorption atmosphérique des infrarouges émis par la Terre</p>
+                                    <p><strong>Résultat :</strong> Stockage d'énergie dans les océans, l'air et les sols, causant une élévation de température (+1°C en 150 ans)</p>
+                                `
+                            },
+                            {
+                                id: "retroactions",
+                                title: "2. Rétroactions",
+                                level: "level-2",
+                                angle: 60, // Droite-bas
+                                children: [
+                                    {
+                                        id: "retroactions-positives",
+                                        title: "Rétroactions positives",
+                                        level: "level-3",
+                                        angle: 40, // Plus vers la droite
+                                        content: `
+                                            <h3>Rétroactions positives (amplificatrices)</h3>
+                                            <ul>
+                                                <li>Fonte des glaces → diminution de l'albédo → plus d'absorption des rayonnements</li>
+                                                <li>Réchauffement des océans → plus d'évaporation → plus de vapeur d'eau (GES)</li>
+                                                <li>Dégel du permafrost → libération de GES</li>
+                                            </ul>
+                                        `
+                                    },
+                                    {
+                                        id: "retroactions-negatives",
+                                        title: "Rétroactions négatives",
+                                        level: "level-3",
+                                        angle: 80, // Plus vers le bas
+                                        content: `
+                                            <h3>Rétroactions négatives (stabilisatrices)</h3>
+                                            <ul>
+                                                <li>Inertie thermique des océans (se réchauffent moins vite)</li>
+                                                <li>Photosynthèse des arbres en croissance (consomme du CO₂)</li>
+                                            </ul>
+                                        `
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        id: "climat-futur",
+                        title: "III. Le climat du futur",
+                        level: "level-1",
+                        angle: 150, // Gauche
+                        children: [
+                            {
+                                id: "modelisation-climat",
+                                title: "1. Modélisation du climat",
+                                level: "level-2",
+                                angle: 110, // En haut à gauche
+                                content: `
+                                    <h3>Modèles climatiques</h3>
+                                    <p><strong>Définition :</strong> Représentation numérique prenant en compte les interactions entre les réservoirs du système climatique</p>
+                                    <p><strong>Méthode :</strong> Découpage du globe en mailles, calculs numériques</p>
+                                    <p><strong>Exemples :</strong> ARPEGE-Climat, ALADIN-Climat</p>
+                                    <p><strong>Validation :</strong> Comparaison avec observations in situ, spatiales et paléoclimats</p>
+                                `
+                            },
+                            {
+                                id: "emissions-ges",
+                                title: "2. Émissions de GES anthropiques",
+                                level: "level-2",
+                                angle: 150, // Gauche
+                                content: `
+                                    <h3>Gaz à effet de serre anthropiques</h3>
+                                    <p><strong>Principal GES anthropique :</strong> CO₂</p>
+                                    <p><strong>Sources :</strong></p>
+                                    <ul>
+                                        <li>CO₂ : combustion d'hydrocarbures, déforestation, production de ciment</li>
+                                        <li>CH₄ : fuites de gaz naturel, fermentation dans décharges, élevages agricoles</li>
+                                    </ul>
+                                `
+                            },
+                            {
+                                id: "previsions-climatiques",
+                                title: "3. Prévisions climatiques",
+                                level: "level-2",
+                                angle: 190, // En bas à gauche
+                                content: `
+                                    <h3>Prévisions du GIEC</h3>
+                                    <p><strong>GIEC :</strong> Groupe d'Experts Intergouvernemental sur l'Evolution du Climat</p>
+                                    <p><strong>Prévisions :</strong> Augmentation de 1,5 à 5°C d'ici la fin du XXIe siècle</p>
+                                    <p><strong>Conséquences :</strong></p>
+                                    <ul>
+                                        <li>Élévation du niveau marin (ordre du mètre)</li>
+                                        <li>Augmentation des événements climatiques extrêmes</li>
+                                        <li>Modifications des régimes de pluie</li>
+                                        <li>Acidification des océans</li>
+                                        <li>Fragilisation des écosystèmes et de la biodiversité</li>
+                                    </ul>
+                                `
+                            },
+                            {
+                                id: "actions-possibles",
+                                title: "4. Actions possibles",
+                                level: "level-2",
+                                angle: 230, // En bas
+                                content: `
+                                    <h3>Stratégies d'action</h3>
+                                    <p><strong>COP :</strong> Conferences Of Parties, réunions annuelles sur le climat</p>
+                                    <p><strong>Objectif GIEC :</strong> Limiter le réchauffement à 2°C</p>
+                                    <p><strong>Stratégies :</strong></p>
+                                    <ul>
+                                        <li><strong>Atténuation :</strong> Réduction des émissions de GES (−20% d'ici 2030, arrêt total en 2075)</li>
+                                        <li><strong>Adaptation :</strong> Stratégies pour faire face au réchauffement (digues, modifications des modes de vie...)</li>
+                                    </ul>
+                                    <p><strong>Résilience :</strong> Capacité d'un écosystème à résister aux perturbations et trouver un nouvel équilibre</p>
+                                `
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // Créer la carte mentale
+        function createMindMap() {
+            const mainNode = document.getElementById("main-node");
+            createNodes(mainNode, mindmapData["main-node"].children);
+        }
+
+        // Créer les nœuds enfants recursively
+        function createNodes(parentNode, children) {
+            if (!children) return;
+            
+            const parentId = parentNode.id;
+            
+            children.forEach((child, index) => {
+                // Créer le nœud
+                const node = document.createElement("div");
+                node.id = child.id;
+                node.className = `node ${child.level}`;
+                node.innerHTML = `<div class="node-content">${child.title}</div>`;
+                
+                document.getElementById("mindmap-container").appendChild(node);
+                
+                // Ajouter l'événement de clic
+                if (child.children) {
+                    node.onclick = function(e) {
+                        e.stopPropagation();
+                        toggleChildren(this.id, child.children[0].level);
+                    };
+                } else {
+                    node.onclick = function(e) {
+                        e.stopPropagation();
+                        showInfoPanel(child.content);
+                    };
+                }
+                
+                // Créer une connexion
+                const connection = document.createElement("div");
+                connection.className = `connection connection-${child.id}`;
+                connection.id = `connection-${child.id}`;
+                document.getElementById("mindmap-container").appendChild(connection);
+                
+                // Créer les nœuds enfants
+                createNodes(node, child.children);
+            });
+        }
+
+        // Afficher/masquer les nœuds enfants
+        function toggleChildren(parentId, childLevel) {
+            const parent = document.getElementById(parentId);
+            const parentData = findNodeData(parentId);
+
+            if (!parentData || !parentData.children) {
+                if (parentData && parentData.content) {
+                    showInfoPanel(parentData.content);
+                }
+                return;
+            }
+
+            let allChildrenVisible = true;
+            const children = [];
+
+            // Vérifie si tous les enfants sont déjà visibles
+            parentData.children.forEach(child => {
+                const node = document.getElementById(child.id);
+                if (node) {
+                    children.push(node);
+                    if (!node.classList.contains("visible")) {
+                        allChildrenVisible = false;
+                    }
+                }
+            });
+
+            if (allChildrenVisible) {
+                // Masquer récursivement tous les enfants
+                hideChildren(parentId);
+            } else {
+                // Obtenir les coordonnées du parent dans le conteneur
+                const centerX = parent.offsetLeft + parent.offsetWidth / 2;
+                const centerY = parent.offsetTop + parent.offsetHeight / 2;
+
+                children.forEach(child => {
+                    const childData = findNodeData(child.id);
+                    if (childData) {
+                        // Choisir un rayon en fonction du niveau
+                        let radius = 220;
+                        if (childData.level === "level-2") radius = 240;
+                        else if (childData.level === "level-3") radius = 260;
+
+                        const angleRad = childData.angle * (Math.PI / 180);
+                        const x = centerX + radius * Math.cos(angleRad) - child.offsetWidth / 2;
+                        const y = centerY + radius * Math.sin(angleRad) - child.offsetHeight / 2;
+
+                        child.style.left = `${x}px`;
+                        child.style.top = `${y}px`;
+                        child.classList.add("visible");
+
+                        // Dessiner la connexion
+                        const connection = document.getElementById(`connection-${child.id}`);
+                        if (connection) {
+                            drawConnection(parent, child, connection);
+                        }
+                    }
+                });
+
+                setTimeout(autoZoom, 600);
+            }
+        }
+
+        // Masquer récursivement tous les enfants
+        function hideChildren(parentId) {
+            const parentData = findNodeData(parentId);
+            
+            if (!parentData || !parentData.children) return;
+            
+            parentData.children.forEach(child => {
+                const node = document.getElementById(child.id);
+                if (node) {
+                    node.classList.remove("visible");
+                    hideChildren(child.id);
+                    
+                    // Masquer la connexion
+                    const connection = document.getElementById(`connection-${child.id}`);
+                    if (connection) {
+                        connection.style.width = "0";
+                    }
+                }
+            });
+        }
+
+        // Dessiner une connexion entre deux nœuds
+        function drawConnection(parent, child, connection) {
+            const parentX = parent.offsetLeft + parent.offsetWidth / 2;
+            const parentY = parent.offsetTop + parent.offsetHeight / 2;
+            const childX = child.offsetLeft + child.offsetWidth / 2;
+            const childY = child.offsetTop + child.offsetHeight / 2;
+
+            const dx = childX - parentX;
+            const dy = childY - parentY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+            connection.style.width = `${distance}px`;
+            connection.style.height = "2px";
+            connection.style.left = `${parentX}px`;
+            connection.style.top = `${parentY}px`;
+            connection.style.transform = `rotate(${angle}deg)`;
+        }
+
+
+        // Afficher le panneau d'information
+        function showInfoPanel(content) {
+            const infoPanel = document.getElementById("info-panel");
+            const infoContent = document.getElementById("info-content");
+            
+            infoContent.innerHTML = content;
+            infoPanel.style.display = "block";
+        }
+
+        // Fermer le panneau d'information
+        function closeInfoPanel() {
+            document.getElementById("info-panel").style.display = "none";
+        }
+
+        // Trouver les données d'un nœud par son ID
+        function findNodeData(nodeId) {
+            if (nodeId === "main-node") return mindmapData["main-node"];
+            
+            let result = null;
+            
+            function search(data) {
+                if (data.id === nodeId) {
+                    result = data;
+                    return;
+                }
+                
+                if (data.children) {
+                    data.children.forEach(child => {
+                        search(child);
+                    });
+                }
+            }
+            
+            search(mindmapData["main-node"]);
+            return result;
+        }
+
+        // Ajuster automatiquement le zoom pour afficher tous les nœuds visibles
+        function autoZoom() {
+            const container = document.getElementById("mindmap-container");
+            const visibleNodes = document.querySelectorAll(".node.visible");
+            
+            if (visibleNodes.length <= 1) {
+                // Si seul le nœud principal est visible, réinitialiser le zoom
+                setZoom(1);
+                return;
+            }
+            
+            // Trouver les limites des nœuds visibles
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            visibleNodes.forEach(node => {
+                const rect = node.getBoundingClientRect();
+                minX = Math.min(minX, rect.left);
+                minY = Math.min(minY, rect.top);
+                maxX = Math.max(maxX, rect.right);
+                maxY = Math.max(maxY, rect.bottom);
+            });
+            
+            // Calculer la taille nécessaire
+            const width = maxX - minX + 100; // Ajouter une marge
+            const height = maxY - minY + 100;
+            
+            // Calculer le facteur de zoom nécessaire
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            const widthRatio = windowWidth / width;
+            const heightRatio = windowHeight / height;
+            
+            // Utiliser le ratio le plus petit pour s'assurer que tout est visible
+            let newZoom = Math.min(widthRatio, heightRatio, 1);
+            
+            // Limiter le zoom
+            newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
+            
+            // Appliquer le zoom
+            setZoom(newZoom);
+        }
+
+        // Fonction zoom in
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                setZoom(currentZoom + zoomStep);
+            }
+        }
+
+        // Fonction zoom out
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                setZoom(currentZoom - zoomStep);
+            }
+        }
+
+        // Réinitialiser le zoom et la position
+        function resetZoom() {
+            currentZoom = 1;
+            containerOffsetX = 0;
+            containerOffsetY = 0;
+            updateContainerTransform();
+            updateConnections();
+        }
+
+        // Définir le niveau de zoom
+        function setZoom(zoom) {
+            currentZoom = zoom;
+            updateContainerTransform();
+            // Redessiner les connexions après le zoom
+            updateConnections();
+        }
+        
+        // Mettre à jour la transformation du conteneur
+        function updateContainerTransform() {
+            const container = document.getElementById("mindmap-container");
+            container.style.transform = `translate(${containerOffsetX}px, ${containerOffsetY}px) scale(${currentZoom})`;
+        }
+
+        // Mettre à jour les connexions entre les nœuds
+        function updateConnections() {
+            const visibleNodes = document.querySelectorAll(".node.visible");
+            visibleNodes.forEach(node => {
+                const parentId = findParentId(node.id);
+                if (parentId) {
+                    const parent = document.getElementById(parentId);
+                    const connection = document.getElementById(`connection-${node.id}`);
+                    if (parent && connection) {
+                        drawConnection(parent, node, connection);
+                    }
+                }
+            });
+        }
+
+        // Trouver l'ID du parent d'un nœud
+        function findParentId(nodeId) {
+            let parentId = null;
+            
+            function search(data, id) {
+                if (data.children) {
+                    for (let i = 0; i < data.children.length; i++) {
+                        if (data.children[i].id === nodeId) {
+                            parentId = id;
+                            return;
+                        }
+                        search(data.children[i], data.children[i].id);
+                    }
+                }
+            }
+            
+            search(mindmapData["main-node"], "main-node");
+            return parentId;
+        }
+
+        // Initialiser les gestionnaires de déplacement (drag)
+        function initDragHandlers() {
+            const viewport = document.getElementById("mindmap-viewport");
+
+            viewport.addEventListener("mousedown", (e) => {
+                isDragging = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                startOffsetX = containerOffsetX;
+                startOffsetY = containerOffsetY;
+                viewport.classList.add("dragging");
+                document.body.classList.add("dragging");
+                e.preventDefault();
+            });
+
+            document.addEventListener("mousemove", (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - dragStartX;
+                const dy = e.clientY - dragStartY;
+                containerOffsetX = startOffsetX + dx;
+                containerOffsetY = startOffsetY + dy;
+                updateContainerTransform();
+                updateConnections();
+            });
+
+            document.addEventListener("mouseup", () => {
+                isDragging = false;
+                viewport.classList.remove("dragging");
+                document.body.classList.remove("dragging");
+            });
+        }
+
+        // Initialiser les gestionnaires de zoom
+        function initZoomHandlers() {
+            document.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomStep = 0.1;
+                if (e.deltaY < 0) {
+                    currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
+                } else {
+                    currentZoom = Math.max(currentZoom - zoomStep, minZoom);
+                }
+                updateContainerTransform();
+                updateConnections();
+            }, { passive: false });
+        }
+
+        // Initialiser la carte mentale
+        window.onload = function() {
+            createMindMap();
+            initDragHandlers();
+            initZoomHandlers();
+            updateContainerTransform();
+            updateConnections();
+            
+            // Positionner le nœud principal au centre initialement
+            const mainNode = document.getElementById("main-node");
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            containerOffsetX = (viewportWidth / 2) - 90; // 90 est la moitié de la largeur du nœud principal (180px)
+            containerOffsetY = (viewportHeight / 2) - 90; // 90 est la moitié de la hauteur du nœud principal (180px)
+            
+            updateContainerTransform();
+        };
+    </script>
+</body>
+</html>
