@@ -7,12 +7,12 @@
     <style>
         html, body {
             font-family: 'Arial', sans-serif;
-            background-color: #121212;
             color: #e0e0e0;
             margin: 0;
             padding: 0;
             height: 100%;
             overflow: hidden;
+            background: linear-gradient(180deg, #0f172a, #1e293b);
         }
         
         #mindmap-viewport {
@@ -43,7 +43,7 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: all 0.5s ease;
+            transition: opacity 0.4s ease, transform 0.4s ease;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             z-index: 10;
             overflow: hidden;
@@ -52,17 +52,20 @@
         }
         
         .node-content {
-            padding: 10px;
-            max-width: 100%;
-            max-height: 100%;
-            overflow: auto;
-            font-size: 14px;
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .node:hover {
+            transform: scale(1.05);
+            z-index: 999;
         }
         
         .main-node {
             width: 180px;
             height: 180px;
-            background-color: #2563eb;
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
             color: white;
             font-weight: bold;
             font-size: 18px;
@@ -72,7 +75,7 @@
         .level-1 {
             width: 160px;
             height: 160px;
-            background-color: #3b82f6;
+            background: linear-gradient(135deg, #0284c7, #0ea5e9);
             color: white;
             font-weight: bold;
             opacity: 0;
@@ -82,8 +85,8 @@
         .level-2 {
             width: 140px;
             height: 140px;
-            background-color: #60a5fa;
-            color: #121212;
+            background: linear-gradient(135deg, #0369a1, #0284c7);
+            color: white;
             opacity: 0;
             transform: scale(0);
         }
@@ -91,10 +94,22 @@
         .level-3 {
             width: 120px;
             height: 120px;
-            background-color: #93c5fd;
-            color: #121212;
+            background: linear-gradient(135deg, #075985, #0369a1);
+            color: white;
             opacity: 0;
             transform: scale(0);
+        }
+
+        .level-1.visible {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+        }
+
+        .level-2.visible {
+            box-shadow: 0 0 12px rgba(96, 165, 250, 0.5);
+        }
+
+        .level-3.visible {
+            box-shadow: 0 0 10px rgba(147, 197, 253, 0.4);
         }
         
         .info-panel {
@@ -124,8 +139,8 @@
         }
         
         .visible {
-            opacity: 1;
-            transform: scale(1);
+            opacity: 1 !important;
+            transform: scale(1) !important;
         }
         
         .close-btn {
@@ -189,9 +204,192 @@
             user-select: none !important;
             cursor: grabbing !important;
         }
+
+        /* Style pour la fenêtre d'instructions */
+        #instructions-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #0f172a, #1e293b);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .instructions-content {
+            width: 80%;
+            max-width: 600px;
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            position: relative;
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .instructions-title {
+            color: #60a5fa;
+            margin-top: 0;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .instructions-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .instructions-icon {
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+            min-width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        .instructions-text {
+            flex-grow: 1;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            display: block;
+            margin: 25px auto 5px;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            background: linear-gradient(135deg, #0284c7, #0ea5e9);
+            transform: scale(1.05);
+        }
+
+        .node-example {
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+            color: white;
+        }
+
+        .info-example {
+            background: linear-gradient(135deg, #0284c7, #0ea5e9);
+            color: white;
+        }
+
+        .drag-example {
+            background: linear-gradient(135deg, #0369a1, #0284c7);
+            color: white;
+        }
+
+        .zoom-example {
+            background: linear-gradient(135deg, #075985, #0369a1);
+            color: white;
+        }
+
+        .show-instructions-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            z-index: 50;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .show-instructions-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 60px;
+                background-color: rgba(30, 41, 59, 0.95);
+                display: flex;
+                flex-direction: row;
+                justify-content: space-evenly;
+                align-items: center;
+                z-index: 50;
+                padding: 0 10px;
+                /* Suppression de cette ligne: border-top: 1px solid rgba(255, 255, 255, 0.1); */
+            }
+
+            .control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 22px;
+                border-radius: 50%; /* Assure que les boutons restent parfaitement ronds */
+            }
+
+            .info-panel {
+                bottom: 70px; /* Juste au-dessus de la barre */
+            }
+        }
+
     </style>
 </head>
 <body>
+    <!-- Fenêtre d'instructions -->
+    <div id="instructions-modal">
+        <div class="instructions-content">
+            <h2 class="instructions-title">Bienvenue dans la Carte Mentale du Système Climatique</h2>
+            
+            <div class="instructions-item">
+                <div class="instructions-icon node-example">1</div>
+                <div class="instructions-text">
+                    <strong>Cliquez sur les cercles</strong> pour explorer les différentes parties de la carte mentale et afficher les sous-catégories.
+                </div>
+            </div>
+            
+            <div class="instructions-item">
+                <div class="instructions-icon info-example">2</div>
+                <div class="instructions-text">
+                    <strong>Cliquez sur les cercles de niveau inférieur</strong> pour afficher les informations détaillées sur chaque thème.
+                </div>
+            </div>
+            
+            <div class="instructions-item">
+                <div class="instructions-icon drag-example">3</div>
+                <div class="instructions-text">
+                    <strong>Déplacez la carte</strong> en cliquant et en faisant glisser le fond pour naviguer dans l'espace de la carte mentale.
+                </div>
+            </div>
+            
+            <div class="instructions-item">
+                <div class="instructions-icon zoom-example">4</div>
+                <div class="instructions-text">
+                    <strong>Zoomez</strong> avec la molette de la souris ou utilisez les boutons + et - en bas à droite pour ajuster la vue.
+                </div>
+            </div>
+            
+            <button class="start-btn" onclick="closeInstructions()">Commencer l'exploration</button>
+        </div>
+    </div>
+
+    <button class="show-instructions-btn" onclick="showInstructions()">Aide ?</button>
+
     <div id="mindmap-viewport">
         <div id="mindmap-container">
             <div class="node main-node" id="main-node" onclick="toggleChildren(this.id, 'level-1')">
@@ -223,6 +421,15 @@
         let containerOffsetY = 0;
         let startOffsetX = 0;
         let startOffsetY = 0;
+
+        // Fonctions pour la fenêtre d'instructions
+        function closeInstructions() {
+            document.getElementById("instructions-modal").style.display = "none";
+        }
+        
+        function showInstructions() {
+            document.getElementById("instructions-modal").style.display = "flex";
+        }
         
         // Données structurées de la carte mentale avec des angles ajustés pour éviter les superpositions
         const mindmapData = {
@@ -460,7 +667,6 @@
             let allChildrenVisible = true;
             const children = [];
 
-            // Vérifie si tous les enfants sont déjà visibles
             parentData.children.forEach(child => {
                 const node = document.getElementById(child.id);
                 if (node) {
@@ -472,17 +678,14 @@
             });
 
             if (allChildrenVisible) {
-                // Masquer récursivement tous les enfants
                 hideChildren(parentId);
             } else {
-                // Obtenir les coordonnées du parent dans le conteneur
                 const centerX = parent.offsetLeft + parent.offsetWidth / 2;
                 const centerY = parent.offsetTop + parent.offsetHeight / 2;
 
                 children.forEach(child => {
                     const childData = findNodeData(child.id);
                     if (childData) {
-                        // Choisir un rayon en fonction du niveau
                         let radius = 220;
                         if (childData.level === "level-2") radius = 240;
                         else if (childData.level === "level-3") radius = 260;
@@ -493,9 +696,12 @@
 
                         child.style.left = `${x}px`;
                         child.style.top = `${y}px`;
-                        child.classList.add("visible");
+                        
+                        // ⬇️ Délai supprimé — affichage immédiat
+                        requestAnimationFrame(() => {
+                            child.classList.add("visible");
+                        });
 
-                        // Dessiner la connexion
                         const connection = document.getElementById(`connection-${child.id}`);
                         if (connection) {
                             drawConnection(parent, child, connection);
@@ -503,27 +709,26 @@
                     }
                 });
 
-                setTimeout(autoZoom, 600);
+                // ⬇️ Évite les délais visuels qui peuvent échouer sur mobile
+                updateConnections();
             }
         }
 
         // Masquer récursivement tous les enfants
         function hideChildren(parentId) {
             const parentData = findNodeData(parentId);
-            
             if (!parentData || !parentData.children) return;
-            
+
             parentData.children.forEach(child => {
                 const node = document.getElementById(child.id);
                 if (node) {
                     node.classList.remove("visible");
                     hideChildren(child.id);
-                    
-                    // Masquer la connexion
-                    const connection = document.getElementById(`connection-${child.id}`);
-                    if (connection) {
-                        connection.style.width = "0";
-                    }
+                }
+
+                const connection = document.getElementById(`connection-${child.id}`);
+                if (connection) {
+                    connection.style.width = "0";
                 }
             });
         }
@@ -700,19 +905,23 @@
             return parentId;
         }
 
-        // Initialiser les gestionnaires de déplacement (drag)
+        
+        // Initialiser les gestionnaires de glissement
         function initDragHandlers() {
             const viewport = document.getElementById("mindmap-viewport");
-
+            
+            // Support souris
             viewport.addEventListener("mousedown", (e) => {
-                isDragging = true;
-                dragStartX = e.clientX;
-                dragStartY = e.clientY;
-                startOffsetX = containerOffsetX;
-                startOffsetY = containerOffsetY;
-                viewport.classList.add("dragging");
-                document.body.classList.add("dragging");
-                e.preventDefault();
+                if (e.button === 0) { // Clic gauche uniquement
+                    isDragging = true;
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                    startOffsetX = containerOffsetX;
+                    startOffsetY = containerOffsetY;
+                    viewport.classList.add("dragging");
+                    document.body.classList.add("dragging");
+                    e.preventDefault();
+                }
             });
 
             document.addEventListener("mousemove", (e) => {
@@ -730,21 +939,220 @@
                 viewport.classList.remove("dragging");
                 document.body.classList.remove("dragging");
             });
+            
+            // Support tactile (smartphone et tablette)
+            let lastTouchX = 0;
+            let lastTouchY = 0;
+            let isTouching = false;
+            let touchStartTime = 0;
+            let hasMoved = false;
+            let touchStartTarget = null;
+            
+            viewport.addEventListener("touchstart", (e) => {
+                if (e.touches.length === 1) {
+                    touchStartTime = Date.now();
+                    hasMoved = false;
+                    touchStartTarget = e.target;
+                    
+                    isTouching = true;
+                    lastTouchX = e.touches[0].clientX;
+                    lastTouchY = e.touches[0].clientY;
+                    startOffsetX = containerOffsetX;
+                    startOffsetY = containerOffsetY;
+                    
+                    // Ne pas ajouter la classe dragging immédiatement pour permettre la détection de tap
+                    // On la mettra seulement si l'utilisateur déplace vraiment son doigt
+                }
+            }, { passive: true }); // Passive true pour de meilleures performances
+            
+            viewport.addEventListener("touchmove", (e) => {
+                if (!isTouching || e.touches.length !== 1) return;
+                
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                
+                // Calculer la distance parcourue depuis le début du toucher
+                const dx = touchX - lastTouchX;
+                const dy = touchY - lastTouchY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Si le mouvement est suffisamment grand, considérer comme un déplacement
+                if (distance > 5) {
+                    hasMoved = true;
+                    viewport.classList.add("dragging");
+                    document.body.classList.add("dragging");
+                    
+                    // Mise à jour de la position
+                    containerOffsetX += dx;
+                    containerOffsetY += dy;
+                    lastTouchX = touchX;
+                    lastTouchY = touchY;
+                    updateContainerTransform();
+                    updateConnections();
+                }
+            }, { passive: true }); // Passive true pour de meilleures performances
+            
+            viewport.addEventListener("touchend", (e) => {
+                if (isTouching) {
+                    const touchDuration = Date.now() - touchStartTime;
+                    
+                    // Si l'utilisateur n'a pas bougé significativement et que la durée est courte
+                    // alors c'est un tap/clic
+                    if (!hasMoved && touchDuration < 300) {
+                        // Vérifier si la cible est un nœud ou contient un nœud
+                        let targetNode = null;
+                        
+                        // D'abord essayer de trouver un nœud à partir de l'élément touché
+                        targetNode = findClickableNodeFromEvent({target: touchStartTarget});
+                        
+                        // Si on a trouvé un nœud, simuler un clic dessus
+                        if (targetNode && targetNode.id) {
+                            // Trouver les données du nœud
+                            const nodeData = findNodeData(targetNode.id);
+                            
+                            if (nodeData) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                if (nodeData.children) {
+                                    toggleChildren(targetNode.id, nodeData.children[0].level);
+                                } else if (nodeData.content) {
+                                    showInfoPanel(nodeData.content);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                isTouching = false;
+                viewport.classList.remove("dragging");
+                document.body.classList.remove("dragging");
+            });
+            
+            viewport.addEventListener("touchcancel", () => {
+                isTouching = false;
+                viewport.classList.remove("dragging");
+                document.body.classList.remove("dragging");
+            });
         }
-
         // Initialiser les gestionnaires de zoom
         function initZoomHandlers() {
+            // Support molette souris et trackpad
             document.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                const zoomStep = 0.1;
+                
+                // Calculer le point focal pour le zoom (position du curseur)
+                const viewportRect = document.getElementById("mindmap-viewport").getBoundingClientRect();
+                const x = e.clientX - viewportRect.left;
+                const y = e.clientY - viewportRect.top;
+                
+                const oldZoom = currentZoom;
+                
+                // Déterminer la direction et l'intensité du zoom
                 if (e.deltaY < 0) {
                     currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
                 } else {
                     currentZoom = Math.max(currentZoom - zoomStep, minZoom);
                 }
+                
+                // Ajuster la position pour que le zoom se fasse au niveau du curseur
+                // (Empêche le "saut" de la carte lors du zoom)
+                const scale = currentZoom / oldZoom;
+                containerOffsetX = x - (x - containerOffsetX) * scale;
+                containerOffsetY = y - (y - containerOffsetY) * scale;
+                
                 updateContainerTransform();
                 updateConnections();
             }, { passive: false });
+            
+            // Support pincement tactile (zoom)
+            let initialDistance = 0;
+            let initialZoom = 1;
+            let zoomCenterX = 0;
+            let zoomCenterY = 0;
+            
+            document.getElementById("mindmap-viewport").addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    // Calcul de la distance initiale entre les deux doigts
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    initialDistance = Math.sqrt(dx * dx + dy * dy);
+                    initialZoom = currentZoom;
+                    
+                    // Calcul du centre du pincement (point focal du zoom)
+                    zoomCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    zoomCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    
+                    e.preventDefault(); // Prévenir le comportement par défaut seulement pour les gestes à deux doigts
+                }
+            }, { passive: false });
+            
+            document.getElementById("mindmap-viewport").addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    // Calcul de la nouvelle distance entre les deux doigts
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const newDistance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Calcul du nouveau niveau de zoom
+                    const zoomFactor = newDistance / initialDistance;
+                    let newZoom = initialZoom * zoomFactor;
+                    
+                    // Limiter le zoom aux valeurs min et max
+                    newZoom = Math.max(minZoom, Math.min(newZoom, maxZoom));
+                    
+                    // Calcul du nouveau centre du pincement
+                    const newCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const newCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                    
+                    // Mise à jour du zoom
+                    const oldZoom = currentZoom;
+                    currentZoom = newZoom;
+                    
+                    // Ajuster la position pour que le zoom se fasse au niveau du pincement
+                    const viewportRect = document.getElementById("mindmap-viewport").getBoundingClientRect();
+                    const x = zoomCenterX - viewportRect.left;
+                    const y = zoomCenterY - viewportRect.top;
+                    
+                    const scale = currentZoom / oldZoom;
+                    containerOffsetX = x - (x - containerOffsetX) * scale;
+                    containerOffsetY = y - (y - containerOffsetY) * scale;
+                    
+                    // Ajustement supplémentaire pour suivre le mouvement du centre du pincement
+                    containerOffsetX += (newCenterX - zoomCenterX);
+                    containerOffsetY += (newCenterY - zoomCenterY);
+                    
+                    zoomCenterX = newCenterX;
+                    zoomCenterY = newCenterY;
+                    
+                    updateContainerTransform();
+                    updateConnections();
+                    e.preventDefault();
+                }
+            }, { passive: false });
+        }
+
+        function isTouchDevice() {
+            return ('ontouchstart' in window) || 
+                (navigator.maxTouchPoints > 0) || 
+                (navigator.msMaxTouchPoints > 0);
+        }
+
+        // Ajoutez cette fonction pour améliorer la détection des nœuds cliquables
+        function findClickableNodeFromEvent(event) {
+            let element = event.target;
+            
+            // Remonter jusqu'à trouver un nœud ou atteindre le viewport
+            while (element && !element.classList.contains('node') && element.id !== 'mindmap-viewport') {
+                element = element.parentElement;
+            }
+            
+            // Si on a trouvé un nœud, le retourner
+            if (element && element.classList.contains('node')) {
+                return element;
+            }
+            
+            return null;
         }
 
         // Initialiser la carte mentale
@@ -764,7 +1172,37 @@
             containerOffsetY = (viewportHeight / 2) - 90; // 90 est la moitié de la hauteur du nœud principal (180px)
             
             updateContainerTransform();
+            
+            // Ajustements pour les appareils tactiles
+            if (isTouchDevice()) {
+                // Ajout de meta tags pour empêcher le pincement de page sur les appareils mobiles
+                const metaTag = document.createElement('meta');
+                metaTag.name = 'viewport';
+                metaTag.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                document.getElementsByTagName('head')[0].appendChild(metaTag);
+                
+                // Ajuster la taille des boutons de contrôle pour les écrans tactiles
+                const controlBtns = document.querySelectorAll('.control-btn');
+                controlBtns.forEach(btn => {
+                    btn.style.width = '50px';
+                    btn.style.height = '50px';
+                    btn.style.fontSize = '24px';
+                });
+            }
         };
+
+        // Ajoutez ce code pour empêcher le comportement par défaut des gestes de pincement sur la page
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('gesturechange', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('gestureend', function(e) {
+            e.preventDefault();
+        }, { passive: false });
     </script>
 </body>
 </html>
